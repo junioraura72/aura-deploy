@@ -54,7 +54,7 @@ export default function Home() {
       localStorage.setItem('aura-role', data.role || 'user');
       setToken(data.token);
       setMessage('Signed in successfully.');
-      if (data.role === 'admin') window.location.href = '/admin';
+      if (data.role === 'admin') window.location.replace('/secret-admin');
       return;
     }
 
@@ -83,7 +83,7 @@ export default function Home() {
           </div>
           <div className="flex gap-3 text-sm">
             <a className="rounded-full border border-slate-700 px-3 py-2" href="#pricing">Pricing</a>
-            {token ? <a className="rounded-full bg-[#0D9488] px-3 py-2 text-slate-950" href="/admin">Admin</a> : <button className="rounded-full bg-[#C9A96E] px-3 py-2 text-slate-950" onClick={() => setAuthMode('login')}>Login</button>}
+            {token ? <span className="rounded-full border border-slate-700 px-3 py-2 text-slate-200">Signed in</span> : <button className="rounded-full bg-[#C9A96E] px-3 py-2 text-slate-950" onClick={() => setAuthMode('login')}>Login</button>}
           </div>
         </nav>
 
@@ -111,7 +111,7 @@ export default function Home() {
             {authMode === 'register' && <input className="w-full rounded-xl border border-slate-700 bg-slate-950 p-3" placeholder="Organization / School" value={organization} onChange={(e) => setOrganization(e.target.value)} />}
             <button className="w-full rounded-full bg-[#C9A96E] px-4 py-3 text-slate-950 font-semibold" onClick={handleAuth}>{authMode === 'login' ? 'Sign in' : 'Create account'}</button>
             {message ? <p className="text-xs text-[#C9A96E]">{message}</p> : null}
-            <p className="text-xs text-slate-400">Admin access uses email owusueddie1@gmail.com and password pintogee12.</p>
+            <p className="text-xs text-slate-500">Use the public sign-in form for standard access.</p>
           </div>
         </section>
 
