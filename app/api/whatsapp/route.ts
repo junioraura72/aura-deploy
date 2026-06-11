@@ -1,21 +1,15 @@
 import { NextResponse } from 'next/server';
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-
 export async function POST(req: Request) {
-  console.log('GEMINI key loaded:', !!GEMINI_API_KEY);
-
-  const { message } = await req.json();
-  const text = String(message || '').trim().toLowerCase();
-
-  if (!GEMINI_API_KEY) {
-    return NextResponse.json({
-      reply: 'Elsie: Gemini is not configured yet. Set GEMINI_API_KEY to enable AI responses.',
-      command: text,
-      fallback: true
-    }, { status: 503 });
+  console.log('AURA agents loaded: Elsie, Architect | Gemini key:', !!process.env.GEMINI_API_KEY);
+  if (!process.env.GEMINI_API_KEY) {
+    console.error('CRITICAL: GEMINI_API_KEY missing in Netlify env vars');
+    throw new Error('GEMINI_API_KEY not configured');
   }
 
+  const GEMINI_API_KEY = process.env.GEMINI_API_KEY!;
+  const { message } = await req.json().catch(() => ({ message: '' }));
+  const text = String(message || '').trim().toLowerCase();
   const prompt = `You are Elsie, AURA's WhatsApp assistant. Answer the user's request concisely and helpfully. User request: ${text || 'status, briefing, or credits'}`;
 
   try {
@@ -36,10 +30,12 @@ export async function POST(req: Request) {
     const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Elsie: I can help with status, briefing, or credits.';
 
     return NextResponse.json({ reply, command: text, fallback: false });
-  } catch (error) {
-    console.error('Elsie Gemini error:', error);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    const stack = err instanceof Error ? err.stack : undefined;
+    console.error('Gemini call failed:', message, stack);
     return NextResponse.json({
-      reply: 'Elsie: Gemini is unavailable right now, but the deploy path is active.',
+      reply: 'Error: Gemini API failed. Check GEMINI_API_KEY in Netlify env vars and redeploy with clear cache.',
       command: text,
       fallback: true
     }, { status: 502 });
