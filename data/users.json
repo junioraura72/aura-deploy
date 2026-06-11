@@ -1,0 +1,8 @@
+[
+  {
+    "email": "testuser@example.com",
+    "password": "$2b$10$laFya2UZ7tedTFsZC9PyKeElzxdOx6nOBbQcqNNL6WxhcyiOpsaYW",
+    "name": "Test User",
+    "organization": "Demo Org"
+  }
+]

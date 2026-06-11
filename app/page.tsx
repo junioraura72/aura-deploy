@@ -11,9 +11,9 @@ const chartData = [
   { name: 'Fri', revenue: 40 },
 ];
 
-export default function Home() {
+export default function Home({ initialMode = 'login' }: { initialMode?: 'login' | 'register' }) {
   const [tab, setTab] = useState<'overview' | 'revenue' | 'risk'>('overview');
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [authMode, setAuthMode] = useState<'login' | 'register'>(initialMode);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -28,18 +28,32 @@ export default function Home() {
     setToken(localStorage.getItem('aura-jwt') || '');
   }, []);
 
+  useEffect(() => {
+    setAuthMode(initialMode);
+  }, [initialMode]);
+
+  const storeSession = (jwt: string, email: string, role: string) => {
+    localStorage.setItem('aura-jwt', jwt);
+    localStorage.setItem('aura-user', email);
+    localStorage.setItem('aura-role', role);
+    setToken(jwt);
+  };
+
   const handleAuth = async () => {
     setMessage('');
     const safeEmail = email.trim().toLowerCase();
-    if (!safeEmail || password.length < 8 || (authMode === 'register' && !name.trim())) {
-      setMessage('Please enter a valid email and at least 8 characters for your password.');
+    const safeName = name.trim();
+    const safeOrganization = organization.trim();
+
+    if (!safeEmail || password.length < 8 || (authMode === 'register' && (!safeName || !safeOrganization))) {
+      setMessage('Please enter a valid email, a password of at least 8 characters, and complete your name and organization.');
       return;
     }
 
     const res = await fetch(`/api/auth/${authMode}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email: safeEmail, password, organization })
+      body: JSON.stringify({ name: safeName, email: safeEmail, password, organization: safeOrganization })
     });
     const data = await res.json();
 
@@ -49,17 +63,36 @@ export default function Home() {
     }
 
     if (authMode === 'login') {
-      localStorage.setItem('aura-jwt', data.token);
-      localStorage.setItem('aura-user', data.email);
-      localStorage.setItem('aura-role', data.role || 'user');
-      setToken(data.token);
+      storeSession(data.token, data.email, data.role || 'user');
       setMessage('Signed in successfully.');
-      if (data.role === 'admin') window.location.replace('/secret-admin');
+      if (data.role === 'admin') {
+        window.location.replace('/secret-admin');
+        return;
+      }
+      window.location.replace('/');
       return;
     }
 
-    setMessage('Account created. You can sign in now.');
-    setAuthMode('login');
+    const loginRes = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: safeEmail, password })
+    });
+    const loginData = await loginRes.json();
+
+    if (!loginRes.ok) {
+      setMessage('Account created. Please sign in with your new credentials.');
+      setAuthMode('login');
+      return;
+    }
+
+    storeSession(loginData.token, loginData.email, loginData.role || 'user');
+    setMessage('Account created and you are now signed in.');
+    if (loginData.role === 'admin') {
+      window.location.replace('/secret-admin');
+      return;
+    }
+    window.location.replace('/');
   };
 
   const handleAnalyze = async () => {

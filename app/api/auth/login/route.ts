@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { ADMIN_EMAIL, ADMIN_PASSWORD, JWT_SECRET, attempts, isValidEmail, isValidPassword, normalizeEmail, users } from '../../../lib/authStore';
+import { ADMIN_EMAIL, ADMIN_PASSWORD, JWT_SECRET, attempts, findUser, isValidEmail, isValidPassword, normalizeEmail } from '../../../lib/authStore';
 
 export async function POST(req: Request) {
   const { email, password } = await req.json();
@@ -22,7 +22,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ token, email: safeEmail, role: 'admin' });
   }
 
-  const user = users.get(safeEmail);
+  const user = await findUser(safeEmail);
   if (!user || !(await bcrypt.compare(safePassword, user.password))) {
     return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
   }

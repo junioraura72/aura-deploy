@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { attempts, isValidEmail, isValidPassword, normalizeEmail, users } from '../../../lib/authStore';
+import { attempts, findUser, isValidEmail, isValidPassword, normalizeEmail, saveUser } from '../../../lib/authStore';
 
 export async function POST(req: Request) {
   const { email, password, name, organization } = await req.json();
@@ -16,11 +16,11 @@ export async function POST(req: Request) {
   if (!isValidEmail(safeEmail) || !isValidPassword(safePassword) || !safeName) {
     return NextResponse.json({ error: 'Use a valid email, a password of at least 8 characters, and a name.' }, { status: 400 });
   }
-  if (users.has(safeEmail)) {
+  if (await findUser(safeEmail)) {
     return NextResponse.json({ error: 'Email already registered.' }, { status: 409 });
   }
 
   const hash = await bcrypt.hash(safePassword, 10);
-  users.set(safeEmail, { email: safeEmail, password: hash, name: safeName, organization: String(organization || 'Unknown').trim() });
+  await saveUser({ email: safeEmail, password: hash, name: safeName, organization: String(organization || 'Unknown').trim() });
   return NextResponse.json({ ok: true, email: safeEmail });
 }
